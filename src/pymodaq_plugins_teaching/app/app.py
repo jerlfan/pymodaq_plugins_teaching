@@ -8,6 +8,8 @@ from pymodaq.utils.gui_utils.dock import DockArea, Dock
 from  pymodaq.utils.gui_utils.file_io import select_file
 from pymodaq.utils.config import Config
 
+
+
 from qtpy import QtWidgets
 from qtpy.QtCore import Slot, QDate, QThread
 
@@ -20,8 +22,10 @@ from pymodaq.utils.gui_utils.widgets.lcd import LCD
 from pymodaq.utils.h5modules.browsing import H5Browser
 from pymodaq.utils.h5modules.saving import H5Saver
 from pymodaq.utils.h5modules.data_saving import DataToExportSaver
-from pymodaq.utils.data import DataToExport
+from pymodaq.utils.data import DataToExport, DataFromPlugins, Axis
 
+import laserbeamsize as lbs
+import numpy as np
 
 config = Config()
 logger = set_logger(get_module_name(__file__))
@@ -70,6 +74,7 @@ class BeamProfiler(CustomApp):
                         checkable=False, toolbar=self.toolbar)
         self.add_action('save', 'Save', 'SaveAs', "Save current data", checkable=False, toolbar=self.toolbar)
         self.add_action('show', 'Show/hide', 'read2', "Show Hide DAQViewer", checkable=True, toolbar=self.toolbar)
+        self.add_action('browser','h5browser','Open','Open the h5browser', checkable=False, toolbar=self.toolbar)
 
         logger.debug('actions set')
 
@@ -89,7 +94,7 @@ class BeamProfiler(CustomApp):
         self.dockarea.addDock(dock_lcd_position, 'right',dock_Viewer2D)
         lcd_widget_position = QtWidgets.QWidget()
         dock_lcd_position.addWidget(lcd_widget_position)#, 'digits':3,'Nvals':2)
-        self.lcd_position = LCD(lcd_widget_position, Nvals=2, labels=['x','y'])
+        self.lcd_position = LCD(lcd_widget_position, digits=6, Nvals=4, labels=['X','dX','Y','dY',])
 
         self.daq_viewer_area = DockArea()
         self.detector = DAQ_Viewer(self.daq_viewer_area, title='A detector')
@@ -121,10 +126,18 @@ class BeamProfiler(CustomApp):
 
         self.connect_action('grab', self.detector.grab)
         self.connect_action('show', self.show_detector)
+        self.connect_action('browser',self.open_browser)
         logger.debug('connecting done')
 
     def show_detector(self, status):
         self.daq_viewer_area.setVisible(status)
+
+    def open_browser(self, ):
+        win = QtWidgets.QMainWindow()
+        prog = H5Browser(win)
+        win.show()
+
+
 
     def setup_menu(self):
         '''
@@ -156,9 +169,28 @@ class BeamProfiler(CustomApp):
 
         logger.debug(f'Value change applied')
 
-    def data_done(self, data):
+    def data_done(self, dte: DataToExport):
         # print(data)
-        pass
+        dte2D = dte.get_data_from_dim('Data2D')
+        dwa_2D=dte2D.get_data_from_name('BSCamera')
+        self.target_viewer.show_data(dwa_2D)
+
+        x, y, dx, dy, phi = lbs.beam_size(dwa_2D[0])
+
+        self.lcd_position.setvalues([np.array([dx]),np.array([dx]),np.array([y]),np.array([dy])])
+
+        dwa_position = DataFromPlugins('position',
+                                       data=[np.array([x,y,dx,dy]),
+                                             ],
+                                       labels=['beam parameters',
+                                               ], )
+        self.raw_data= DataToExport('profiler',
+                           data=[
+                               dwa_2D,
+                               dwa_position])
+
+
+
 
     def show_data(self, data: DataToExport):
         """
