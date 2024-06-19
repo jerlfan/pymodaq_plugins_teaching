@@ -27,7 +27,7 @@ config = Config()
 logger = set_logger(get_module_name(__file__))
 
 
-class CustomAppExample(CustomApp):
+class BeamProfiler(CustomApp):
 
     # list of dicts enabling the settings tree on the user interface
     params = [
@@ -124,8 +124,7 @@ class CustomAppExample(CustomApp):
         logger.debug('connecting done')
 
     def show_detector(self, status):
-        self.dock_detector.setVisible(status)
-        self.dock_detector_settings.setVisible(status)
+        self.daq_viewer_area.setVisible(status)
 
     def setup_menu(self):
         '''
@@ -241,7 +240,7 @@ def main():
     dockarea = DockArea()
     mainwindow.setCentralWidget(dockarea)
 
-    prog = CustomAppExample(dockarea)
+    prog = BeamProfiler(dockarea)
 
     mainwindow.show()
     sys.exit(app.exec_())
