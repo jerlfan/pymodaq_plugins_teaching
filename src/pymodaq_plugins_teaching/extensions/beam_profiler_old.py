@@ -1,5 +1,7 @@
 from pymodaq.utils import gui_utils as gutils
 from pymodaq.utils import daq_utils as utils
+from pymodaq.utils.logger import set_logger, get_module_name
+from pymodaq.utils.config import Config
 from pyqtgraph.parametertree import Parameter, ParameterTree
 from pymodaq.utils.parameter import pymodaq_ptypes
 from qtpy import QtWidgets, QtCore
@@ -8,14 +10,14 @@ from pymodaq.utils.plotting.data_viewers.viewer1D import Viewer1D
 from pymodaq.utils.plotting.data_viewers.viewer2D import Viewer2D
 
 
-config = utils.load_config()
-logger = utils.set_logger(utils.get_module_name(__file__))
+config = Config()
+logger = set_logger(get_module_name(__file__))
 
-EXTENSION_NAME = 'MY_EXTENSION_NAME'
-CLASS_NAME = 'MyExtension'
+EXTENSION_NAME = 'Beam_Profiler_Old'
+CLASS_NAME = 'BeamProfiler'
 
 
-class MyExtension(gutils.CustomApp):
+class BeamProfiler(gutils.CustomApp):
     # list of dicts enabling the settings tree on the user interface
     params = [
         {'title': 'Main settings:', 'name': 'main_settings', 'type': 'group', 'children': [
